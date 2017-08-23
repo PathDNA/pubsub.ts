@@ -2,6 +2,40 @@
 Pubsub is a typescript pubsub data-store library which is focused on simplicity and ease-of-use.
 
 ## Usage
+### Typescript
+```js
+// Set dependency within package.json
+{
+	"dependencies" : {
+	    "pubsub": "github:Path94/pubsub.ts"
+	}
+}
+```
+
+```typescript
+import * as pubsub from "node_modules/pubsub/pubsub"
+
+function main() {
+	// Create new instance of pubsub
+	const ps = pubsub.New<string>();
+
+	// Subscribe to "greeting"
+	ps.Sub("greeting", (key: string, value: string): boolean => {
+		console.log("Subscription update!", key, value);
+		return false;
+	})
+
+	// Put value for "greeting" and "hello world"
+	ps.Put("greeting", "hello world");
+
+	// Get a value without subscribing
+	const val = ps.Get("greeting");
+	console.log("Value!", val);
+}
+
+```
+
+### Javascript
 ```js
 // Example utilizing require.js
 require(["pubsub"], function (pubsub) {
@@ -19,6 +53,7 @@ require(["pubsub"], function (pubsub) {
 	// Get a value without subscribing
 	let val = ps.Get("greeting");
 });
+
 ```
 
 ## Interface
