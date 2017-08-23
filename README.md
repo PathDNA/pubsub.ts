@@ -1,4 +1,4 @@
-# Pubsub
+# Pubsub ![Status](https://img.shields.io/badge/status-beta-yellow.svg)
 Pubsub is a typescript pubsub data-store library which is focused on simplicity and ease-of-use.
 
 ## Usage
