@@ -1,0 +1,9 @@
+{
+  "name": "pubsub.ts",
+  "version": "0.0.1",
+  "description": "Pubsub storage library",
+  "main": "pubsub.ts",
+  "repository": "git@github.com:Path94/pubsub.ts.git",
+  "author": "Path94",
+  "license": "MIT"
+}

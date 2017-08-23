@@ -1,0 +1,99 @@
+<html>
+
+<head>
+	<script src="require.js" type="application/javascript"></script>
+	<script src="pubsub.js" type="application/javascript"></script>
+</head>
+
+<body>
+	<script type="application/javascript">
+		var pubsub = null;
+
+		function testBasicSub(key) {
+			const ps = pubsub.New();
+			// Test subscribing
+			let subN = 0;
+			// Attempt auto unsub
+			let sk = ps.Sub(key, function (key, val) {
+				subN++;
+				if (subN > 1) {
+					throw "Too many subscription iterations";
+				}
+
+				return true;
+			});
+
+			ps.Put("greeting", "1");
+			ps.Put("greeting", "2");
+			ps.Put("greeting", "3");
+		}
+
+		function testManualUnsub(key) {
+			const ps = pubsub.New();
+			// Test subscribing
+			let subN = 0;
+			// Subscribe to greeting
+			sk = ps.Sub(key, function (key, val) {
+				subN++;
+				if (subN > 1) {
+					throw "Too many subscription iterations";
+				}
+
+				return false;
+			});
+
+			ps.Put("greeting", "1");
+			ps.Unsub(sk);
+			ps.Put("greeting", "2");
+			ps.Put("greeting", "3");
+		}
+
+		function TestPutGetDelete() {
+			const ps = pubsub.New();
+			var val = ps.Get("greeting");
+			if (val !== null) {
+				throw "Invalid value";
+			}
+
+			ps.Put("greeting", "hello world");
+			val = ps.Get("greeting");
+			if (val !== "hello world") {
+				throw "Invalid value";
+			}
+
+			ps.Delete("greeting");
+			val = ps.Get("greeting");
+			if (val !== null) {
+				throw "Invalid value";
+			}
+		}
+
+		function TestBasicSub() {
+			testBasicSub("greeting");
+		}
+
+		function TestManualUnsub() {
+			testManualUnsub("greeting");
+		}
+
+		function TestBasicGlobalSub() {
+			testBasicSub("*");
+		}
+
+		function TestManualGlobalUnsub() {
+			testManualUnsub("*");
+		}
+
+		require(["pubsub"], function (ps) {
+			pubsub = ps;
+			TestPutGetDelete();
+			TestBasicSub();
+			TestManualUnsub();
+			TestBasicGlobalSub();
+			TestManualGlobalUnsub();
+			console.log("Test suite complete!");
+		});
+	</script>
+</body>
+
+</html>
