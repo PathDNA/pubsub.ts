@@ -1,0 +1,67 @@
+<html>
+
+<head>
+	<script src="require.js" type="application/javascript"></script>
+	<script src="pubsub.js" type="application/javascript"></script>
+</head>
+
+<body>
+	<script type="application/javascript">
+		require(["pubsub"], function (pubsub) {
+			const ps = pubsub.New();
+			// Test subscribing
+			let subN = 0;
+
+			// Attempt auto unsub
+			let sk = ps.Sub("hello", function (key, val) {
+				subN++;
+				if (subN > 1) {
+					console.error("Too many subscription iterations")
+					return true;
+				}
+
+				return true;
+			});
+
+			ps.Put("greeting", "1");
+			ps.Put("greeting", "2");
+			ps.Put("greeting", "3");
+
+			// Attempt manual unsub
+			subN = 0;
+			sk = ps.Sub("hello", function (key, val) {
+				subN++;
+				if (subN > 1) {
+					console.error("Too many subscription iterations")
+					return true;
+				}
+
+				return false;
+			});
+
+			ps.Put("greeting", "1");
+			ps.Unsub(sk);
+			ps.Put("greeting", "2");
+			ps.Put("greeting", "3");
+			ps.Put("greeting", "hello");
+
+			let val = ps.Get("greeting");
+			if (val !== "hello") {
+				console.error("invalid value:", val);
+			}
+
+			if (!ps.Delete("greeting")) {
+				console.error("false negative for deletion success");
+			}
+
+			val = ps.Get("greeting");
+			if (val !== null) {
+				console.error("invalid value:", val);
+			}
+
+			console.log("Test suite complete!");
+		})
+	</script>
+</body>
+
+</html>
