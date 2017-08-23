@@ -14,18 +14,23 @@ export class PubSub<T> {
 	private s: common.Subber<T>;
 
 	constructor() {
+		// Create a fresh entry map
 		this.m = newEntryMap();
+		// Set internal subber with a prefix of "global"
 		this.s = new common.Subber<T>("global");
 	}
 
 	private createEntry(key: string): entry.Entry<T> {
 		let e = this.m[key];
 		if (!!e) {
+			// Entry exists - no need to create, return early
 			return e;
 		}
 
+		// Create a new entry and set it within the map AND as our local e variable
 		e = this.m[key] = new entry.Entry(key);
 		this.s.ForEach((sKey: string, fn: common.SubFn<T>) => e.Sub(fn, sKey));
+		// Return reference to entry
 		return e;
 	}
 
@@ -126,9 +131,11 @@ export class PubSub<T> {
 	}
 }
 
+// newEntryMap returns a new entry map
 function newEntryMap<T>(): entryMap<T> {
 	const m = <entryMap<T>>{};
 	return m;
 }
 
+// entryMap is a QoL type to cleanup references to maps containing only entries
 type entryMap<T> = { [key: string]: entry.Entry<T> };
