@@ -31,31 +31,26 @@ export class Subber<T> {
 
 	constructor(key: string) {
 		this.m = NewSubMap<T>();
-		this.i = new Indexer(key + "_")
-	}
-
-	private forEach(fn: (sKey: string, sfn: SubFn<T>) => void) {
-		Object.keys(this.m).forEach((subKey: string) => {
-			const sfn = this.m[subKey];
-			if (!sfn) {
-				return;
-			}
-
-			fn(subKey, sfn);
-			return;
-		});
+		this.i = new Indexer(key + "_");
+		this.closed = false;
 	}
 
 	Signal(key: string, value: T | null) {
-		if (closed) {
+		if (this.closed) {
 			return;
 		}
 
-		this.forEach((skey: string, sfn: SubFn<T>) => sfn(key, value));
+		this.ForEach((skey: string, sfn: SubFn<T>) => {
+			if (sfn(key, value) !== true) {
+				return;
+			};
+
+			this.Unsub(skey);
+		});
 	}
 
 	Sub(fn: SubFn<T>, subKey?: string): string {
-		if (closed) {
+		if (this.closed) {
 			return "";
 		}
 
@@ -72,11 +67,23 @@ export class Subber<T> {
 	}
 
 	Unsub(key: string): boolean {
-		if (closed) {
+		if (this.closed) {
 			return false;
 		}
 
 		return delete this.m[key];
+	}
+
+	ForEach(fn: (sKey: string, sfn: SubFn<T>) => void) {
+		Object.keys(this.m).forEach((subKey: string) => {
+			const sfn = this.m[subKey];
+			if (!sfn) {
+				return;
+			}
+
+			fn(subKey, sfn);
+			return;
+		});
 	}
 
 	Close() {
@@ -84,6 +91,7 @@ export class Subber<T> {
 			return;
 		}
 
+		this.closed = true;
 		this.m = NewSubMap();
 	}
 }

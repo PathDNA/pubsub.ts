@@ -19,12 +19,14 @@ export class PubSub<T> {
 	}
 
 	private createEntry(key: string): entry.Entry<T> {
-		const e = this.m[key];
+		let e = this.m[key];
 		if (!!e) {
 			return e;
 		}
 
-		return this.m[key] = new entry.Entry(key);
+		e = this.m[key] = new entry.Entry(key);
+		this.s.ForEach((sKey: string, fn: common.SubFn<T>) => e.Sub(fn, sKey));
+		return e;
 	}
 
 	private forEach(fn: (key: string, e: entry.Entry<T>) => void) {
@@ -42,12 +44,14 @@ export class PubSub<T> {
 
 	private unsub(key: string): boolean {
 		if (!this.s.Unsub(key)) {
+			console.error("Could not unsub key!", key);
 			// Key doesn't exist within global sub list. Because there is no need
 			// to attempt to unsub at the Entry level, we can return early.
 			return false;
 		}
+
 		// Unsub from each entry
-		this.forEach((key: string, e: entry.Entry<T>) => e.Unsub(key));
+		this.forEach((_: string, e: entry.Entry<T>) => e.Unsub(key));
 		return true;
 	}
 
