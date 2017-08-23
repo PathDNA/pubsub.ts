@@ -1,0 +1,13 @@
+{
+        "version": "2.0.0",
+        "tasks": [{
+                "taskName": "run and watch",
+                "command": "tsc",
+                "args": [
+                        "--watch",
+                        "-p",
+                        "./"
+                ],
+                "problemMatcher": "$tsc-watch"
+        }]
+}
