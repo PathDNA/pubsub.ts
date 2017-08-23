@@ -24,8 +24,8 @@ require(["pubsub"], function (pubsub) {
 ## Interface
 This library supports the following features:
 
-- Get: Return value for given key
-- Put: Set value for a given key
-- Delete: Remove entry for given key (value and subscribers)
-- Sub: Subscribe to value updates for a given key
-- Unsub: Unsubscribe from value updates
+- **Get**: Return value for given key
+- **Put**: Set value for a given key
+- **Delete**: Remove entry for given key (value and subscribers)
+- **Sub**: Subscribe to value updates for a given key
+- **Unsub**: Unsubscribe from value updates
