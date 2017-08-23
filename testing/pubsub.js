@@ -22,25 +22,22 @@ define("common", ["require", "exports"], function (require, exports) {
         constructor(key) {
             this.m = NewSubMap();
             this.i = new Indexer(key + "_");
-        }
-        forEach(fn) {
-            Object.keys(this.m).forEach((subKey) => {
-                const sfn = this.m[subKey];
-                if (!sfn) {
-                    return;
-                }
-                fn(subKey, sfn);
-                return;
-            });
+            this.closed = false;
         }
         Signal(key, value) {
-            if (closed) {
+            if (this.closed) {
                 return;
             }
-            this.forEach((skey, sfn) => sfn(key, value));
+            this.ForEach((skey, sfn) => {
+                if (sfn(key, value) !== true) {
+                    return;
+                }
+                ;
+                this.Unsub(skey);
+            });
         }
         Sub(fn, subKey) {
-            if (closed) {
+            if (this.closed) {
                 return "";
             }
             if (!subKey) {
@@ -53,15 +50,26 @@ define("common", ["require", "exports"], function (require, exports) {
             return subKey;
         }
         Unsub(key) {
-            if (closed) {
+            if (this.closed) {
                 return false;
             }
             return delete this.m[key];
+        }
+        ForEach(fn) {
+            Object.keys(this.m).forEach((subKey) => {
+                const sfn = this.m[subKey];
+                if (!sfn) {
+                    return;
+                }
+                fn(subKey, sfn);
+                return;
+            });
         }
         Close() {
             if (this.closed) {
                 return;
             }
+            this.closed = true;
             this.m = NewSubMap();
         }
     }
@@ -122,14 +130,16 @@ define("pubsub", ["require", "exports", "common", "entry"], function (require, e
     class PubSub {
         constructor() {
             this.m = newEntryMap();
-            this.sub = new common.Subber("global");
+            this.s = new common.Subber("global");
         }
         createEntry(key) {
-            const e = this.m[key];
+            let e = this.m[key];
             if (!!e) {
                 return e;
             }
-            return this.m[key] = new entry.Entry(key);
+            e = this.m[key] = new entry.Entry(key);
+            this.s.ForEach((sKey, fn) => e.Sub(fn, sKey));
+            return e;
         }
         forEach(fn) {
             Object.keys(this.m).forEach((key) => {
@@ -137,6 +147,24 @@ define("pubsub", ["require", "exports", "common", "entry"], function (require, e
                 fn(key, e);
             });
         }
+        sub(fn) {
+            const sk = this.s.Sub(fn);
+            this.forEach((key, e) => e.Sub(fn, sk));
+            return sk;
+        }
+        unsub(key) {
+            if (!this.s.Unsub(key)) {
+                console.error("Could not unsub key!", key);
+                // Key doesn't exist within global sub list. Because there is no need
+                // to attempt to unsub at the Entry level, we can return early.
+                return false;
+            }
+            // Unsub from each entry
+            this.forEach((_, e) => e.Unsub(key));
+            return true;
+        }
+        // Get will get a value for a provided key
+        // Note: Will return null if key match is not found
         Get(key) {
             const entry = this.m[key];
             if (!entry) {
@@ -144,37 +172,55 @@ define("pubsub", ["require", "exports", "common", "entry"], function (require, e
             }
             return entry.Get();
         }
+        // Put will set a key/val pair and notify all related subscribers
         Put(key, val) {
+            if (key === "*") {
+                console.error("invalid key", key);
+                return;
+            }
             const entry = this.createEntry(key);
+            // Put value for entry
             entry.Put(val);
         }
+        // Delete will remove an entry for a provided key
+        // Note: All subscribers will be called with a null value to indicate 
+        // closing of the entry.
         Delete(key) {
             const entry = this.m[key];
             if (!entry) {
+                // Entry does not exist, return early
                 return false;
             }
+            // Close entry
             entry.Close();
+            // Return the delete state of removing the provided key from the entries map
             return delete this.m[key];
         }
+        // Sub will subscribe a listener for a provided key
         Sub(key, fn) {
             if (key === "*") {
-                const sk = this.sub.Sub(fn);
-                this.forEach((key, e) => e.Sub(fn, sk));
-                return sk;
+                // Run global sub and return
+                return this.sub(fn);
             }
             const entry = this.createEntry(key);
+            // Subscribe provided function to entry
             return entry.Sub(fn);
         }
+        // Unsub will unsubscribe a listener for a provided key
         Unsub(key) {
+            // Entry key is the prefix of the key indicating which entry is belongs to.
             const entryKey = key.split("_")[0];
+            // Wildcard ("*") values are given the prefix "global".
             if (entryKey === "global") {
-                // Handle global
-                return true;
+                // Run global unsub and return
+                return this.unsub(key);
             }
             const entry = this.m[entryKey];
             if (!entry) {
+                // Entry doesn't exist, return early
                 return false;
             }
+            // Unsubscribe provided key from entry
             return entry.Unsub(key);
         }
     }
