@@ -7,17 +7,17 @@
 
 <body>
 	<script type="application/javascript">
-		require(["pubsub"], function (pubsub) {
+		var pubsub = null;
+
+		function testBasicSub(key) {
 			const ps = pubsub.New();
 			// Test subscribing
 			let subN = 0;
-
 			// Attempt auto unsub
-			let sk = ps.Sub("hello", function (key, val) {
+			let sk = ps.Sub(key, function (key, val) {
 				subN++;
 				if (subN > 1) {
-					console.error("Too many subscription iterations")
-					return true;
+					throw "Too many subscription iterations";
 				}
 
 				return true;
@@ -26,14 +26,17 @@
 			ps.Put("greeting", "1");
 			ps.Put("greeting", "2");
 			ps.Put("greeting", "3");
+		}
 
-			// Attempt manual unsub
-			subN = 0;
-			sk = ps.Sub("hello", function (key, val) {
+		function testManualUnsub(key) {
+			const ps = pubsub.New();
+			// Test subscribing
+			let subN = 0;
+			// Subscribe to greeting
+			sk = ps.Sub(key, function (key, val) {
 				subN++;
 				if (subN > 1) {
-					console.error("Too many subscription iterations")
-					return true;
+					throw "Too many subscription iterations";
 				}
 
 				return false;
@@ -43,22 +46,51 @@
 			ps.Unsub(sk);
 			ps.Put("greeting", "2");
 			ps.Put("greeting", "3");
-			ps.Put("greeting", "hello");
+		}
 
-			let val = ps.Get("greeting");
-			if (val !== "hello") {
-				console.error("invalid value:", val);
+		function TestPutGetDelete() {
+			const ps = pubsub.New();
+			var val = ps.Get("greeting");
+			if (val !== null) {
+				throw "Invalid value";
 			}
 
-			if (!ps.Delete("greeting")) {
-				console.error("false negative for deletion success");
+			ps.Put("greeting", "hello world");
+			val = ps.Get("greeting");
+			if (val !== "hello world") {
+				throw "Invalid value";
 			}
 
+			ps.Delete("greeting");
 			val = ps.Get("greeting");
 			if (val !== null) {
-				console.error("invalid value:", val);
+				throw "Invalid value";
 			}
+		}
 
+		function TestBasicSub() {
+			testBasicSub("greeting");
+		}
+
+		function TestManualUnsub() {
+			testManualUnsub("greeting");
+		}
+
+		function TestBasicGlobalSub() {
+			testBasicSub("*");
+		}
+
+		function TestManualGlobalUnsub() {
+			testManualUnsub("*");
+		}
+
+		require(["pubsub"], function (ps) {
+			pubsub = ps;
+			TestPutGetDelete();
+			TestBasicSub();
+			TestManualUnsub();
+			TestBasicGlobalSub();
+			TestManualGlobalUnsub();
 			console.log("Test suite complete!");
 		})
 	</script>
