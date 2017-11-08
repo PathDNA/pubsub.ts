@@ -131,6 +131,8 @@ export class PubSub<T> {
 	}
 }
 
+type SubFn<T> = common.SubFn<T>;
+
 // newEntryMap returns a new entry map
 function newEntryMap<T>(): entryMap<T> {
 	const m = <entryMap<T>>{};
