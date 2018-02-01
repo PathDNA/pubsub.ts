@@ -129,6 +129,13 @@ export class PubSub<T> {
 		// Unsubscribe provided key from entry
 		return entry.Unsub(key)
 	}
+
+	Close() {
+		for (var k in this.m) {
+			this.m[k].Close();
+			delete this.m[k];
+		}
+	}
 }
 
 export type SubFn<T> = common.SubFn<T>;
